@@ -21,4 +21,21 @@ export class InMemoryTicketRepository implements ITicketRepository {
 
     return ticket;
   }
+
+  // NOVO: encontra próximo ticket WAITING
+  async findNextWaiting(tenantId: string, queueId: string): Promise<TicketModel | null> {
+    const nextWaiting = tickets.find(
+      t => t.tenantId === tenantId && 
+           t.queueId === queueId && 
+           t.status === 'WAITING'
+    );
+
+    if (nextWaiting) {
+      console.log('[IN-MEMORY] Found next waiting ticket:', nextWaiting);
+    } else {
+      console.log('[IN-MEMORY] No waiting tickets for tenant/queue:', { tenantId, queueId });
+    }
+
+    return nextWaiting || null;
+  }
 }
