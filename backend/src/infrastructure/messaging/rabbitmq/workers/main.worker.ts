@@ -1,35 +1,45 @@
 import amqplib from 'amqplib';
 
+const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://admin:password@localhost:5672';
+const EXCHANGE = 'tenant.events';
+
 async function main() {
-  console.log('[WORKER] Connecting to RabbitMQ...');
-  const connection = await amqplib.connect('amqp://admin:password@localhost:5672');
+  console.log('[WORKER] Starting RabbitMQ consumer...');
+  
+  const connection = await amqplib.connect(RABBITMQ_URL);
   const channel = await connection.createChannel();
 
-  const exchange = 'tenant.events';
-  await channel.assertExchange(exchange, 'topic', { durable: true });
+  await channel.assertExchange(EXCHANGE, 'topic', { durable: true });
   
+  // Cria fila exclusiva para este worker
   const q = await channel.assertQueue('', { exclusive: true });
-  await channel.bindQueue(q.queue, exchange, 'tenant.*.ticket.*');
+  
+  // Bind para todos eventos de ticket
+  await channel.bindQueue(q.queue, EXCHANGE, 'tenant.*.ticket.*');
 
-  console.log('[WORKER] Waiting for ticket events. To exit press CTRL+C');
+  console.log('[WORKER] Ready to consume tenant.*.ticket.* events. Press CTRL+C');
 
   channel.consume(q.queue, (msg) => {
     if (msg !== null) {
       const routingKey = msg.fields.routingKey;
       const content = JSON.parse(msg.content.toString());
 
-      console.log(`[WORKER] Received ${routingKey}:`, content);
+      console.log(`[WORKER] 🟡 Processing ${routingKey}:`, content);
 
-      // Simula processamento assíncrono (ex: recalcular métricas)
-      setTimeout(() => {
-        console.log('[WORKER] Processed:', content.ticketId);
+      // Simula processamento assíncrono (métricas, notificações, etc.)
+      setTimeout(async () => {
+        console.log(`[WORKER] ✅ Processed ${content.ticketId || content.number}`);
+        
+        // Aqui poderia:
+        // - Calcular métricas da fila
+        // - Enviar SMS/Email
+        // - Atualizar cache Redis
+        // - Publicar novo evento
+        
         channel.ack(msg);
-      }, 1000);
+      }, Math.random() * 2000 + 500); // 0.5-2.5s
     }
-  }, { noAck: false });
+  });
 }
 
-main().catch(err => {
-  console.error('[WORKER] ERROR:', err);
-  process.exit(1);
-});
+main().catch(console.error);
