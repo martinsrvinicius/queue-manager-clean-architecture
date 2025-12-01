@@ -37,7 +37,6 @@ export class InMemoryTicketRepository implements ITicketRepository {
     return nextWaiting || null;
   }
 
-  // NOVO: simula mudança de status (sem persistir ainda)
   async callNextTicket(ticketId: string): Promise<TicketModel> {
     const ticketIndex = tickets.findIndex(t => t.id === ticketId);
     if (ticketIndex === -1) {
@@ -53,4 +52,21 @@ export class InMemoryTicketRepository implements ITicketRepository {
     console.log('[IN-MEMORY] Called ticket:', tickets[ticketIndex]);
     return tickets[ticketIndex];
   }
+
+    async finishTicket(ticketId: string): Promise<TicketModel> {
+    const ticketIndex = tickets.findIndex(t => t.id === ticketId);
+    if (ticketIndex === -1) {
+      throw new Error(`Ticket ${ticketId} not found`);
+    }
+
+    tickets[ticketIndex] = {
+      ...tickets[ticketIndex],
+      status: 'FINISHED' as const,
+      finishedAt: new Date(),
+    };
+
+    console.log('[IN-MEMORY] Finished ticket:', tickets[ticketIndex]);
+    return tickets[ticketIndex];
+  }
+
 }

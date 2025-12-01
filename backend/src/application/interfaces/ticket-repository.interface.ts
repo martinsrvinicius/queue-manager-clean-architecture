@@ -22,4 +22,8 @@ export interface TicketModel {
 export interface ITicketRepository {
   create(data: CreateTicketData): Promise<TicketModel>;
   findNextWaiting(tenantId: string, queueId: string): Promise<TicketModel | null>;
+
+  callNextTicket(ticketId: string): Promise<TicketModel>;
+
+  finishTicket(ticketId: string): Promise<TicketModel>;
 }
