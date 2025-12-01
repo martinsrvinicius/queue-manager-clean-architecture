@@ -1,5 +1,6 @@
 import { ITicketRepository, CreateTicketData } from '../../interfaces/ticket-repository.interface';
 import { IMessageQueue } from '../../interfaces/message-queue.interface';
+import { IWebSocketGateway } from '../../interfaces/websocket-gateway.interface';
 
 interface CreateTicketInput {
   tenantId: string;
@@ -21,10 +22,10 @@ export class CreateTicketUseCase {
   constructor(
     private readonly ticketRepository: ITicketRepository,
     private readonly messageQueue: IMessageQueue,
+    private readonly wsGateway: IWebSocketGateway, // NOVO: WebSocket
   ) {}
 
   async execute(input: CreateTicketInput): Promise<CreateTicketOutput> {
-    // 1. Cria ticket no banco
     const ticketData: CreateTicketData = {
       tenantId: input.tenantId,
       queueId: input.queueId,
@@ -34,7 +35,13 @@ export class CreateTicketUseCase {
 
     const ticket = await this.ticketRepository.create(ticketData);
 
-    // 2. Publica evento para processamento assíncrono
+    // NOVO: Emite via WebSocket para queue específica
+    this.wsGateway.emitToQueue('ticket.created', {
+      ticketId: ticket.id,
+      number: ticket.number,
+      customerName: ticket.customerName,
+    }, input.tenantId, input.queueId);
+
     await this.messageQueue.publish(
       `tenant.${input.tenantId}.ticket.created`,
       {
@@ -46,7 +53,6 @@ export class CreateTicketUseCase {
       }
     );
 
-    // 3. Retorna resultado
     return {
       id: ticket.id,
       tenantId: ticket.tenantId,

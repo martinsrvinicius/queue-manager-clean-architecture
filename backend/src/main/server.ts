@@ -1,8 +1,12 @@
 import express from 'express';
 import cors from 'cors';
+import http from 'http';
 import { ticketRouter } from './routes/ticket-routes';
+import { initWsServer } from './websocket/ws-server';
 
 const app = express();
+const server = http.createServer(app);
+
 app.use(cors());
 app.use(express.json());
 
@@ -10,10 +14,11 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', message: 'Queue Manager Clean Architecture' });
 });
 
-// Registrar rotas
 app.use('/api/v1/tickets', ticketRouter);
 
-const port = process.env.PORT || 3000;
-app.listen(port, () => {
-  console.log(`🚀 API running on http://localhost:${port}`);
+export const io = initWsServer(server); // inicia WS sobre o http server
+
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log(`🚀 Server listening on http://localhost:${PORT}`);
 });
