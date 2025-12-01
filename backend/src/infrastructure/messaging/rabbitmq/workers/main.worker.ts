@@ -2,6 +2,7 @@ import amqplib from 'amqplib';
 
 const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://admin:password@localhost:5672';
 const EXCHANGE = 'tenant.events';
+const QUEUE_NAME = 'ticket_events'; // ← FILA NOMEADA DURÁVEL
 
 async function main() {
   console.log('[WORKER] Starting RabbitMQ consumer...');
@@ -9,37 +10,36 @@ async function main() {
   const connection = await amqplib.connect(RABBITMQ_URL);
   const channel = await connection.createChannel();
 
+  // Exchange topic
   await channel.assertExchange(EXCHANGE, 'topic', { durable: true });
   
-  // Cria fila exclusiva para este worker
-  const q = await channel.assertQueue('', { exclusive: true });
+  // FILA NOMEADA DURÁVEL COMPARTILHADA
+  await channel.assertQueue(QUEUE_NAME, { 
+    durable: true, 
+    arguments: { 
+      'x-queue-type': 'classic' // ou 'quorum' para alta disponibilidade
+    } 
+  });
   
-  // Bind para todos eventos de ticket
-  await channel.bindQueue(q.queue, EXCHANGE, 'tenant.*.ticket.*');
+  // Binding para todos eventos de ticket
+  await channel.bindQueue(QUEUE_NAME, EXCHANGE, 'tenant.*.ticket.*');
 
-  console.log('[WORKER] Ready to consume tenant.*.ticket.* events. Press CTRL+C');
+  console.log(`[WORKER] Ready to consume from queue "${QUEUE_NAME}" (tenant.*.ticket.*)`);
 
-  channel.consume(q.queue, (msg) => {
+  channel.consume(QUEUE_NAME, (msg) => {
     if (msg !== null) {
       const routingKey = msg.fields.routingKey;
       const content = JSON.parse(msg.content.toString());
 
       console.log(`[WORKER] 🟡 Processing ${routingKey}:`, content);
 
-      // Simula processamento assíncrono (métricas, notificações, etc.)
+      // Simula processamento assíncrono
       setTimeout(async () => {
         console.log(`[WORKER] ✅ Processed ${content.ticketId || content.number}`);
-        
-        // Aqui poderia:
-        // - Calcular métricas da fila
-        // - Enviar SMS/Email
-        // - Atualizar cache Redis
-        // - Publicar novo evento
-        
         channel.ack(msg);
-      }, Math.random() * 2000 + 500); // 0.5-2.5s
+      }, Math.random() * 2000 + 500);
     }
-  });
+  }, { noAck: false });
 }
 
 main().catch(console.error);
