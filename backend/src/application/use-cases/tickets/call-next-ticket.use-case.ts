@@ -1,5 +1,6 @@
 import { ITicketRepository } from '../../interfaces/ticket-repository.interface';
 import { IMessageQueue } from '../../interfaces/message-queue.interface';
+import { IWebSocketGateway } from '../../interfaces/websocket-gateway.interface';
 
 interface CallNextTicketInput {
   tenantId: string;
@@ -20,6 +21,7 @@ export class CallNextTicketUseCase {
   constructor(
     private readonly ticketRepository: ITicketRepository,
     private readonly messageQueue: IMessageQueue,
+    private readonly wsGateway: IWebSocketGateway, // NOVO
   ) {}
 
   async execute(input: CallNextTicketInput): Promise<CallNextTicketOutput> {
@@ -29,10 +31,15 @@ export class CallNextTicketUseCase {
       throw new Error('No waiting tickets in queue');
     }
 
-    // Chama ticket via repositório
     const calledTicket = await this.ticketRepository.callNextTicket(nextTicket.id);
 
-    // Publica evento
+    // NOVO: Emite via WebSocket
+    this.wsGateway.emitToQueue('ticket.called', {
+      ticketId: calledTicket.id,
+      number: calledTicket.number,
+      customerName: calledTicket.customerName,
+    }, input.tenantId, input.queueId);
+
     await this.messageQueue.publish(
       `tenant.${input.tenantId}.ticket.called`,
       {
@@ -55,4 +62,3 @@ export class CallNextTicketUseCase {
     };
   }
 }
-
