@@ -3,7 +3,9 @@
   "scripts": {
     "dev": "tsx watch src/main/server.ts",
     "worker": "tsx watch src/infrastructure/messaging/rabbitmq/workers/main.worker.ts",
-    "db:migrate": "tsx src/infrastructure/persistence/postgres/migrations/run.ts"
+    "db:migrate": "tsx src/infrastructure/persistence/postgres/migrations/run.ts",
+    "start": "node dist/main/server.js",
+    "build": "tsc"
   },
   "dependencies": {
     "amqplib": "^0.10.4",
@@ -17,6 +19,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@types/amqplib": "^0.10.8",
     "@types/bcryptjs": "^2.4.6",
     "@types/express": "^4.17.21",
     "@types/jsonwebtoken": "^9.0.7",
