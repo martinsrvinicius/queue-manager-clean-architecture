@@ -1,4 +1,5 @@
 import { ITicketRepository, CreateTicketData, TicketModel } from '../../../application/interfaces/ticket-repository.interface';
+import { Ticket } from '../../../domain/entities/ticket.entity';
 
 let currentId = 1;
 let currentNumber = 1;
@@ -22,7 +23,6 @@ export class InMemoryTicketRepository implements ITicketRepository {
     return ticket;
   }
 
-  // NOVO: encontra próximo ticket WAITING
   async findNextWaiting(tenantId: string, queueId: string): Promise<TicketModel | null> {
     const nextWaiting = tickets.find(
       t => t.tenantId === tenantId && 
@@ -32,10 +32,25 @@ export class InMemoryTicketRepository implements ITicketRepository {
 
     if (nextWaiting) {
       console.log('[IN-MEMORY] Found next waiting ticket:', nextWaiting);
-    } else {
-      console.log('[IN-MEMORY] No waiting tickets for tenant/queue:', { tenantId, queueId });
     }
 
     return nextWaiting || null;
+  }
+
+  // NOVO: simula mudança de status (sem persistir ainda)
+  async callNextTicket(ticketId: string): Promise<TicketModel> {
+    const ticketIndex = tickets.findIndex(t => t.id === ticketId);
+    if (ticketIndex === -1) {
+      throw new Error(`Ticket ${ticketId} not found`);
+    }
+
+    tickets[ticketIndex] = {
+      ...tickets[ticketIndex],
+      status: 'CALLING' as const,
+      calledAt: new Date(),
+    };
+
+    console.log('[IN-MEMORY] Called ticket:', tickets[ticketIndex]);
+    return tickets[ticketIndex];
   }
 }

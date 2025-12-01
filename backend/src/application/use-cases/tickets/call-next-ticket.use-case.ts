@@ -23,36 +23,36 @@ export class CallNextTicketUseCase {
   ) {}
 
   async execute(input: CallNextTicketInput): Promise<CallNextTicketOutput> {
-    // 1. Busca próximo ticket WAITING (implementar no repo depois)
     const nextTicket = await this.ticketRepository.findNextWaiting(input.tenantId, input.queueId);
     
     if (!nextTicket) {
       throw new Error('No waiting tickets in queue');
     }
 
-    // 2. Chama ticket (muda status e seta calledAt)
-    //nextTicket.call();
+    // Chama ticket via repositório
+    const calledTicket = await this.ticketRepository.callNextTicket(nextTicket.id);
 
-    // 3. Publica evento
+    // Publica evento
     await this.messageQueue.publish(
       `tenant.${input.tenantId}.ticket.called`,
       {
         tenantId: input.tenantId,
         queueId: input.queueId,
-        ticketId: nextTicket.id,
-        customerName: nextTicket.customerName,
-        number: nextTicket.number,
+        ticketId: calledTicket.id,
+        customerName: calledTicket.customerName,
+        number: calledTicket.number,
       }
     );
 
     return {
-      id: nextTicket.id,
-      tenantId: nextTicket.tenantId,
-      queueId: nextTicket.queueId,
-      number: nextTicket.number,
-      customerName: nextTicket.customerName,
+      id: calledTicket.id,
+      tenantId: calledTicket.tenantId,
+      queueId: calledTicket.queueId,
+      number: calledTicket.number,
+      customerName: calledTicket.customerName,
       status: 'CALLING',
-      calledAt: nextTicket.calledAt!,
+      calledAt: calledTicket.calledAt!,
     };
   }
 }
+
