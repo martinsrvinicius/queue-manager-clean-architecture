@@ -6,8 +6,19 @@ export class RabbitMQAdapter implements IMessageQueue {
   private channel: amqplib.Channel | null = null;
   private readonly exchange = 'tenant.events';
 
-  constructor(private url: string = 'amqp://admin:password@localhost:5672') {}
+  private static instance: RabbitMQAdapter | null = null;
 
+  constructor(
+  private url: string = process.env.RABBITMQ_URL || 'amqp://admin:password@localhost:5672'
+) {}
+
+
+  static getInstance(url?: string): RabbitMQAdapter {
+    if (!RabbitMQAdapter.instance) {
+      RabbitMQAdapter.instance = new RabbitMQAdapter(url);
+    }
+    return RabbitMQAdapter.instance;
+  }
   private async connect() {
     if (this.connection) return;
     

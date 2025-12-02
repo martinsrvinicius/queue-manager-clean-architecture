@@ -17,6 +17,11 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
+    healthcheck:
+      test: rabbitmq-diagnostics ping
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   api:
     build:
@@ -29,8 +34,10 @@ services:
       DATABASE_URL: postgres://admin:password@postgres:5432/queuemanager
       RABBITMQ_URL: amqp://admin:password@rabbitmq:5672
     depends_on:
-      - postgres
-      - rabbitmq
+      postgres:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
 
   worker:
     build:
@@ -42,8 +49,10 @@ services:
       DATABASE_URL: postgres://admin:password@postgres:5432/queuemanager
       RABBITMQ_URL: amqp://admin:password@rabbitmq:5672
     depends_on:
-      - postgres
-      - rabbitmq
+      postgres:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
 
 volumes:
   postgres_data:
