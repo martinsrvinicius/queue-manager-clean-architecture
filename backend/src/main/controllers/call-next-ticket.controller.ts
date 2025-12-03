@@ -22,6 +22,7 @@ export class CallNextTicketController {
       } else if (error instanceof Error && error.message === 'No waiting tickets in queue') {
         res.status(404).json({ error: error.message });
       } else {
+        console.error('CallNextTicketController error:', error);
         res.status(500).json({ error: 'Internal server error' });
       }
     }

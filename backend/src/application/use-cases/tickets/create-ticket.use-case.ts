@@ -22,7 +22,7 @@ export class CreateTicketUseCase {
   constructor(
     private readonly ticketRepository: ITicketRepository,
     private readonly messageQueue: IMessageQueue,
-    private readonly wsGateway: IWebSocketGateway, // NOVO: WebSocket
+    private readonly wsGateway: IWebSocketGateway,
   ) {}
 
   async execute(input: CreateTicketInput): Promise<CreateTicketOutput> {

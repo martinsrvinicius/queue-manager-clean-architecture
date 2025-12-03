@@ -4,15 +4,18 @@
     "dev": "tsx watch src/main/server.ts",
     "worker": "tsx watch src/infrastructure/messaging/rabbitmq/workers/main.worker.ts",
     "db:migrate": "tsx src/infrastructure/persistence/postgres/migrations/run.ts",
+    "db:seed": "tsx prisma/seed.ts",
     "start": "node dist/main/server.js",
     "build": "tsc"
   },
   "dependencies": {
+    "@prisma/adapter-pg": "^7.1.0",
+    "@prisma/client": "^7.1.0",
     "amqplib": "^0.10.4",
     "bcryptjs": "^2.4.3",
     "express": "^4.19.2",
     "jsonwebtoken": "^9.0.2",
-    "pg": "^8.13.0",
+    "pg": "^8.16.3",
     "socket.io": "^4.7.5",
     "socket.io-client": "^4.8.1",
     "swagger-jsdoc": "^6.2.8",
@@ -29,6 +32,7 @@
     "@types/pg": "^8.11.6",
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.8",
+    "prisma": "^7.1.0",
     "tsx": "^4.19.1",
     "typescript": "^5.6.2"
   }

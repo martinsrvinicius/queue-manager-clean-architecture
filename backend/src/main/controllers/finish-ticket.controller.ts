@@ -25,6 +25,7 @@ export class FinishTicketController {
       } else if (error instanceof Error && error.message.includes('not found')) {
         res.status(404).json({ error: error.message });
       } else {
+        console.error('FinishTicketController error:', error);
         res.status(500).json({ error: 'Internal server error' });
       }
     }
